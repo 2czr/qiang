@@ -1,0 +1,2701 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>校园匿名墙</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --surface-2: #f7f9fc;
+      --text: #132033;
+      --muted: #667085;
+      --line: #dfe5ee;
+      --green: #12a874;
+      --green-2: #0b7a55;
+      --blue: #2d6cdf;
+      --orange: #f97316;
+      --red: #e5484d;
+      --shadow: 0 18px 55px rgba(19, 32, 51, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(238, 242, 246, 0.82), rgba(238, 242, 246, 1)),
+        url("./public/wall-bg.jpeg") center top / cover fixed no-repeat;
+      letter-spacing: 0;
+    }
+    button, input, textarea, select { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .hidden { display: none !important; }
+
+    .auth-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 430px;
+      gap: 34px;
+      align-items: center;
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 32px 18px;
+    }
+    .auth-copy {
+      color: #fff;
+      min-height: 560px;
+      border-radius: 8px;
+      padding: 34px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      background:
+        linear-gradient(180deg, rgba(12, 31, 39, 0.12), rgba(12, 31, 39, 0.76)),
+        url("./public/chat-bg.jpeg") center / cover no-repeat;
+      box-shadow: var(--shadow);
+    }
+    .auth-copy h1 {
+      font-size: 44px;
+      line-height: 1.08;
+      margin: 0 0 14px;
+      max-width: 620px;
+    }
+    .auth-copy p {
+      margin: 0;
+      color: rgba(255,255,255,.86);
+      line-height: 1.8;
+      max-width: 560px;
+    }
+    .auth-card, .panel, .post, .notice, .chat-shell {
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(223, 229, 238, .92);
+      border-radius: 8px;
+      box-shadow: 0 12px 35px rgba(19, 32, 51, 0.08);
+      backdrop-filter: blur(16px);
+    }
+    .auth-card { padding: 24px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      box-shadow: 0 10px 25px rgba(18, 168, 116, .28);
+    }
+    h1, h2, h3, p { margin: 0; }
+    h2 { font-size: 19px; }
+    h3 { font-size: 15px; }
+    .sub { color: var(--muted); font-size: 13px; margin-top: 4px; line-height: 1.65; }
+    .form { display: grid; gap: 12px; }
+    .input, .textarea, .select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      padding: 10px 12px;
+    }
+    .textarea {
+      resize: vertical;
+      min-height: 92px;
+      line-height: 1.7;
+    }
+    .input:focus, .textarea:focus, .select:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(18, 168, 116, .14);
+    }
+    .primary, .secondary, .danger, .ghost {
+      min-height: 38px;
+      border-radius: 8px;
+      padding: 8px 13px;
+      font-weight: 760;
+      transition: transform .14s ease, background .14s ease, border-color .14s ease;
+    }
+    .primary { color: #fff; background: var(--green); }
+    .primary:hover { background: var(--green-2); }
+    .secondary { color: var(--text); background: #fff; border: 1px solid var(--line); }
+    .danger { color: #fff; background: var(--red); }
+    .ghost { color: var(--green-2); background: #e7f7f1; }
+    .primary:active, .secondary:active, .danger:active, .ghost:active { transform: scale(.98); }
+    .link { color: var(--green-2); background: transparent; font-weight: 760; padding: 6px; }
+    .error {
+      display: none;
+      border: 1px solid #fecdd3;
+      color: #be123c;
+      background: #fff1f2;
+      padding: 9px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(223,229,238,.86);
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(18px);
+    }
+    .topbar-inner {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .nav {
+      display: flex;
+      gap: 6px;
+      padding: 4px;
+      background: #edf2f7;
+      border-radius: 8px;
+    }
+    .nav button {
+      min-width: 82px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #667085;
+      background: transparent;
+      font-weight: 760;
+    }
+    .nav button.active {
+      color: var(--green-2);
+      background: #fff;
+      box-shadow: 0 5px 14px rgba(19,32,51,.08);
+    }
+    .layout {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 18px;
+    }
+    .wall-hero {
+      min-height: 260px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 24px;
+      align-items: center;
+      overflow: hidden;
+      background:
+        linear-gradient(120deg, rgba(245, 247, 255, .96), rgba(234, 239, 255, .92)),
+        url("./public/wall-bg.jpeg") center / cover no-repeat;
+    }
+    .wall-hero h1 {
+      margin: 8px 0 12px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+    .hero-art {
+      min-height: 200px;
+      border-radius: 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.36), rgba(255,255,255,.76)),
+        url("./public/chat-bg.jpeg") center / cover no-repeat;
+      border: 1px solid rgba(255,255,255,.72);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric-card {
+      min-height: 86px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(232,237,244,.95);
+    }
+    .metric-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #5b5ff0;
+      background: #eef0ff;
+      font-weight: 900;
+    }
+    .metric-card strong { display: block; font-size: 22px; margin-top: 2px; }
+    .feed-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .friend-grid {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+    .request-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .request-item:last-child { border-bottom: 0; }
+    .stack { display: grid; gap: 14px; }
+    .panel { padding: 12px; }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .space { justify-content: space-between; }
+    .meta { color: var(--muted); font-size: 12px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 12px;
+      font-weight: 760;
+      color: #475467;
+      background: #eef2f7;
+    }
+    .badge.green { background: #dcfce7; color: #166534; }
+    .badge.blue { background: #dbeafe; color: #1d4ed8; }
+    .badge.orange { background: #ffedd5; color: #c2410c; }
+    .badge.red { background: #fee2e2; color: #b91c1c; }
+    .composer-actions {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      user-select: none;
+    }
+    .preview {
+      max-width: 170px;
+      max-height: 125px;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      margin-top: 10px;
+    }
+    .notice {
+      padding: 15px;
+      border-left: 4px solid var(--orange);
+      display: grid;
+      gap: 6px;
+    }
+    .notice-rotator {
+      gap: 10px;
+      padding: 12px;
+      border-left-color: #6d63ff;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(239,244,255,.96));
+    }
+    .notice-rotator .notice-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .notice-rotator .notice-copy {
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .notice-rotator h3 {
+      font-size: 15px;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .notice-rotator .sub {
+      font-size: 12.5px;
+      line-height: 1.55;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 0;
+    }
+    .notice-rotator .notice-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    .notice-rotator .notice-tools .icon-btn {
+      min-width: 30px;
+      padding: 4px 8px;
+      background: #fff;
+    }
+    .mini-shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 12px 18px 96px;
+      display: grid;
+      gap: 12px;
+    }
+    .mini-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+    .mini-hero-main {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(239,244,255,.96));
+      border: 1px solid rgba(223,229,238,.92);
+      box-shadow: 0 12px 32px rgba(19,32,51,.06);
+    }
+    .mini-title {
+      font-size: 20px;
+      line-height: 1.25;
+      margin: 0;
+    }
+    .mini-sub {
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.7;
+    }
+    .mini-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mini-actions .primary,
+    .mini-actions .secondary {
+      min-height: 34px;
+      padding: 7px 10px;
+    }
+    .mini-panel {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(223,229,238,.92);
+      box-shadow: 0 10px 26px rgba(19,32,51,.05);
+    }
+    .mini-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .mini-metric {
+      padding: 10px;
+      border-radius: 8px;
+      background: #f7f9fd;
+      border: 1px solid #e8edf4;
+    }
+    .mini-metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 18px;
+    }
+    .mini-toolbar {
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.95);
+      border: 1px solid rgba(223,229,238,.92);
+    }
+    .mini-toolbar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .mini-tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mini-tabs::-webkit-scrollbar { display: none; }
+    .mini-tab {
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f1f4fb;
+      color: #667085;
+      font-size: 12.5px;
+      font-weight: 800;
+    }
+    .mini-tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, #6875ff, #4f66f2);
+      box-shadow: 0 8px 18px rgba(79,102,242,.22);
+    }
+    .mini-categories {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mini-categories::-webkit-scrollbar { display: none; }
+    .mini-category {
+      flex: 0 0 auto;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #f7f9fd;
+      border: 1px solid #edf1f7;
+      color: #596579;
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .mini-category.active {
+      color: #3753d8;
+      background: #edf1ff;
+      border-color: #dce4ff;
+    }
+    .mini-feed-wrap {
+      display: grid;
+      gap: 12px;
+    }
+    .mini-feed-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .mini-feed {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .mini-empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--muted);
+      background: rgba(255,255,255,.95);
+      border: 1px dashed #dbe3ef;
+      border-radius: 8px;
+    }
+    .mini-compose {
+      position: fixed;
+      left: 50%;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      z-index: 60;
+      width: min(760px, calc(100% - 36px));
+      transform: translateX(-50%);
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.98);
+      border: 1px solid rgba(223,229,238,.94);
+      box-shadow: 0 -10px 26px rgba(19,32,51,.10);
+      backdrop-filter: blur(14px);
+    }
+    .mini-compose-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mini-compose .input {
+      flex: 1 1 240px;
+      min-height: 34px;
+      padding: 7px 10px;
+      border-radius: 999px;
+    }
+    .mini-compose .primary,
+    .mini-compose .secondary {
+      min-height: 32px;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .mini-compose .check {
+      min-height: 32px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #f7f9fd;
+      border: 1px solid #edf1f7;
+    }
+    .compose-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+    .mini-compose-preview {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .mini-compose-preview .media-preview {
+      width: 44px;
+      height: 44px;
+      max-width: 44px;
+      max-height: 44px;
+      margin-top: 0;
+    }
+    .private-layout {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+    .private-shell {
+      height: calc(100vh - 94px);
+      min-height: 500px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+    .private-back {
+      min-height: 30px;
+      padding: 5px 9px;
+    }
+    .post { overflow: hidden; }
+    .post-head, .post-body, .post-actions, .comments { padding: 10px 12px; }
+    .post-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+    }
+    .name-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .name { font-weight: 860; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .content {
+      white-space: pre-wrap;
+      line-height: 1.75;
+      font-size: 14px;
+    }
+    .post-img {
+      display: block;
+      max-width: min(560px, 100%);
+      max-height: 240px;
+      border-radius: 8px;
+      object-fit: cover;
+      margin-top: 10px;
+      border: 1px solid var(--line);
+    }
+    .media-preview, .media-content {
+      display: block;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: #000;
+    }
+    .media-preview {
+      max-width: 180px;
+      max-height: 128px;
+      margin-top: 10px;
+    }
+    .media-content {
+      max-width: min(560px, 100%);
+      max-height: 240px;
+      margin-top: 10px;
+    }
+    .chat-media {
+      max-width: min(360px, 70vw);
+      max-height: 260px;
+      margin-top: 8px;
+    }
+    .post-actions {
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #fbfcfe;
+    }
+    .icon-btn {
+      border-radius: 8px;
+      padding: 5px 8px;
+      color: #475467;
+      background: #f2f5f9;
+      border: 1px solid #e8edf4;
+      font-weight: 760;
+      min-height: 28px;
+    }
+    .icon-btn.active { color: #be123c; background: #fff1f2; }
+    .friend-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 22px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #e7f7f1;
+      color: var(--green-2);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .friend-action[disabled] {
+      cursor: default;
+      background: #eef2f6;
+      color: var(--muted);
+    }
+    .filter-card {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,.92);
+    }
+    .filter-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border-radius: 8px;
+      background: #f1f4fb;
+      border: 1px solid #e8edf4;
+    }
+    .filter-tab {
+      min-height: 32px;
+      border-radius: 7px;
+      background: transparent;
+      color: #667085;
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform .14s ease, background .14s ease, color .14s ease, box-shadow .14s ease;
+    }
+    .filter-tab.active {
+      color: #fff;
+      background: linear-gradient(135deg, #6875ff, #4f66f2);
+      box-shadow: 0 8px 18px rgba(79,102,242,.24);
+    }
+    .filter-tab:active { transform: scale(.97); }
+    .category-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .category-row::-webkit-scrollbar { display: none; }
+    .category-pill {
+      flex: 0 0 auto;
+      min-height: 28px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      color: #596579;
+      background: #f7f9fd;
+      border: 1px solid #edf1f7;
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .category-pill.active {
+      color: #3753d8;
+      background: #edf1ff;
+      border-color: #dce4ff;
+    }
+    .bottom-composer {
+      position: fixed;
+      left: 50%;
+      bottom: calc(58px + env(safe-area-inset-bottom));
+      z-index: 35;
+      width: min(1180px, calc(100% - 24px));
+      transform: translateX(-50%);
+      display: grid;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid rgba(223,229,238,.92);
+      border-radius: 8px;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 -8px 28px rgba(19,32,51,.12);
+      backdrop-filter: blur(16px);
+    }
+    .bottom-composer::before {
+      content: "";
+      position: fixed;
+      left: 50%;
+      bottom: calc(-58px - env(safe-area-inset-bottom));
+      width: 100vw;
+      height: calc(64px + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      background: #eef2f6;
+      z-index: -1;
+      pointer-events: none;
+    }
+    .bottom-composer-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bottom-composer .input {
+      min-height: 32px;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .bottom-composer .primary,
+    .bottom-composer .secondary {
+      min-height: 30px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+    .bottom-composer-preview {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .comments {
+      border-top: 1px solid var(--line);
+      background: #f8fafc;
+    }
+    .comment {
+      padding: 10px 0;
+      border-bottom: 1px solid #e8edf4;
+    }
+    .comment:last-child { border-bottom: 0; }
+    .side {
+      position: sticky;
+      top: 76px;
+      align-self: start;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .stat {
+      background: #f5f8fb;
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat strong { display: block; font-size: 21px; }
+
+    .chat-layout {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 18px;
+      min-height: calc(100vh - 70px);
+    }
+    .room-list { padding: 12px; }
+    .room-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      font-weight: 760;
+    }
+    .room-item.active { background: #e7f7f1; color: var(--green-2); }
+    .chat-shell {
+      height: calc(100vh - 106px);
+      min-height: 620px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+    }
+    .chat-head, .chat-input {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.94);
+    }
+    .chat-input { border-top: 1px solid var(--line); border-bottom: 0; }
+    .chat-messages {
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px;
+      background:
+        linear-gradient(rgba(248,250,252,.88), rgba(248,250,252,.88)),
+        url("./public/chat-bg.jpeg") center / cover no-repeat;
+    }
+    .msg {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 13px;
+      max-width: 760px;
+    }
+    .msg.mine {
+      margin-left: auto;
+      flex-direction: row-reverse;
+    }
+    .bubble {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 8px 20px rgba(19,32,51,.06);
+      line-height: 1.65;
+    }
+    .msg.mine .bubble { background: #e7f7f1; border-color: #c8ebdd; }
+    .notice-rotator {
+      position: relative;
+    }
+    .notice-dots {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .notice-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      padding: 0;
+    }
+    .notice-dot.active {
+      width: 18px;
+      border-radius: 999px;
+      background: var(--orange);
+    }
+
+    .admin-grid {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+    .admin-cols {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 14px;
+    }
+    .user-item, .ad-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+    }
+    .perm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(138px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      z-index: 50;
+      background: rgba(19, 32, 51, .92);
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: none;
+      max-width: min(540px, calc(100vw - 32px));
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .auth-page, .layout, .chat-layout, .admin-cols { grid-template-columns: 1fr; }
+      .wall-hero, .friend-grid { grid-template-columns: 1fr; }
+      .metric-strip, .feed-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .auth-copy { min-height: 360px; }
+      .auth-copy h1 { font-size: 34px; }
+      .side { position: static; }
+      .topbar-inner { align-items: flex-start; flex-direction: column; }
+      .nav { width: 100%; }
+      .nav button { flex: 1; min-width: 0; }
+      .composer-actions, .post-actions, .row.space { align-items: stretch; flex-direction: column; }
+      .user-item, .ad-item { grid-template-columns: 1fr; }
+      .perm-grid { grid-template-columns: 1fr; }
+      .chat-shell { min-height: 560px; }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        background: #eef2f6;
+      }
+      .auth-page {
+        min-height: 100svh;
+        display: block;
+        padding: 0;
+      }
+      .auth-copy {
+        min-height: 215px;
+        border-radius: 0;
+        padding: 24px 18px;
+        box-shadow: none;
+      }
+      .auth-copy h1 {
+        font-size: 26px;
+        line-height: 1.18;
+      }
+      .auth-card {
+        margin: -24px 12px 16px;
+        padding: 18px;
+      }
+      .topbar {
+        position: sticky;
+      }
+      .topbar-inner {
+        padding: 10px 12px;
+        flex-direction: row;
+        align-items: center;
+      }
+      .topbar .mark {
+        width: 36px;
+        height: 36px;
+      }
+      .topbar h2 {
+        font-size: 17px;
+      }
+      .topbar .sub {
+        font-size: 11px;
+        max-width: 190px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .top-actions {
+        margin-left: auto;
+      }
+      .top-actions .secondary {
+        min-height: 34px;
+        padding: 7px 10px;
+      }
+      .nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 45;
+        width: 100%;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+        border-radius: 0;
+        border-top: 1px solid var(--line);
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 -10px 24px rgba(19,32,51,.10);
+      }
+      .nav button {
+        min-height: 44px;
+        padding: 7px 8px;
+        font-size: 13px;
+      }
+      .layout, .chat-layout, .admin-grid {
+        padding: 10px 10px calc(78px + env(safe-area-inset-bottom));
+      }
+      .metric-strip, .feed-grid { grid-template-columns: 1fr; }
+      .wall-hero { min-height: 0; }
+      .wall-hero .hero-art { display: none; }
+      #feedAnchor { max-height: none !important; padding-bottom: 18px !important; }
+      .bottom-composer {
+        bottom: calc(56px + env(safe-area-inset-bottom));
+        width: calc(100% - 16px);
+        padding: 6px;
+      }
+      .bottom-composer-main {
+        gap: 6px;
+      }
+      .bottom-composer .input {
+        min-height: 31px;
+      }
+      .bottom-composer .secondary,
+      .bottom-composer .primary {
+        min-height: 29px;
+        padding: 5px 7px;
+      }
+      .bottom-composer .check {
+        font-size: 11px;
+        gap: 4px;
+      }
+      .post-head, .post-body, .post-actions { padding: 7px 9px; }
+      .post .content { font-size: 12.5px; line-height: 1.48; }
+      .avatar { width: 28px; height: 28px; font-size: 11px; }
+      .badge, .friend-action, .meta { font-size: 11px; }
+      .filter-card { padding: 8px; gap: 8px; }
+      .filter-tabs { gap: 4px; padding: 3px; }
+      .filter-tab { min-height: 30px; font-size: 12px; }
+      .category-pill { min-height: 26px; padding: 4px 9px; font-size: 11px; }
+      .notice-rotator { padding: 10px; gap: 8px; }
+      .notice-rotator h3 { font-size: 14px; }
+      .notice-rotator .sub { font-size: 11.5px; -webkit-line-clamp: 2; }
+      .notice-rotator .notice-tools .icon-btn { min-width: 28px; padding: 3px 7px; }
+      .post-img, .media-content { max-height: 180px; }
+      .mini-shell { padding: 10px 10px 92px; gap: 10px; }
+      .mini-hero { grid-template-columns: 1fr; }
+      .mini-title { font-size: 18px; }
+      .mini-feed { grid-template-columns: 1fr; }
+      .mini-compose { bottom: calc(8px + env(safe-area-inset-bottom)); width: calc(100% - 16px); padding: 7px; }
+      .mini-compose-main { display: grid; grid-template-columns: 1fr; gap: 7px; }
+      .mini-compose .input { flex: unset; width: 100%; min-height: 36px; }
+      .compose-tools { width: 100%; justify-content: space-between; gap: 6px; }
+      .compose-tools .secondary,
+      .compose-tools .primary,
+      .compose-tools .check { flex: 1 1 0; justify-content: center; white-space: nowrap; font-size: 12px; }
+      .private-layout { padding: 10px; }
+      .private-shell { height: calc(100svh - 72px); min-height: 420px; }
+      .layout {
+        gap: 10px;
+      }
+      .side {
+        display: none;
+      }
+      .panel, .post, .notice, .chat-shell {
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(19,32,51,.06);
+      }
+      .panel, .post-head, .post-body, .post-actions, .comments {
+        padding: 12px;
+      }
+      .textarea {
+        min-height: 78px;
+      }
+      .composer-actions {
+        gap: 10px;
+      }
+      .composer-actions .row, .chat-input .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .composer-actions .primary,
+      .chat-input .primary {
+        width: 100%;
+      }
+      .check {
+        min-height: 38px;
+      }
+      .post-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .post-head > .row {
+        width: 100%;
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+      }
+      .content {
+        font-size: 14px;
+      }
+      .media-content {
+        width: 100%;
+        max-height: 320px;
+      }
+      .chat-layout {
+        min-height: calc(100svh - 58px);
+        gap: 10px;
+      }
+      .room-list {
+        padding: 10px;
+      }
+      .room-list .sub {
+        display: none;
+      }
+      .room-list .stack {
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding-bottom: 2px;
+        margin-top: 8px !important;
+      }
+      .room-item {
+        min-width: 132px;
+        flex: 0 0 auto;
+      }
+      .chat-shell {
+        height: calc(100svh - 230px);
+        min-height: 430px;
+      }
+      .chat-head, .chat-input {
+        padding: 10px;
+      }
+      .chat-messages {
+        padding: 12px;
+      }
+      .msg {
+        max-width: 100%;
+      }
+      .bubble {
+        font-size: 14px;
+      }
+      .chat-media {
+        max-width: 68vw;
+        max-height: 240px;
+      }
+      .admin-grid {
+        gap: 10px;
+      }
+      .user-item, .ad-item {
+        gap: 10px;
+      }
+      .toast {
+        bottom: calc(78px + env(safe-area-inset-bottom));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const STORE_KEY = "campus_wall_polished_v2";
+    const SESSION_KEY = "campus_wall_session_v2";
+    const DEVICE_KEY = "campus_wall_device_id_v2";
+    const BINDING_KEY = "campus_wall_bound_user_v2";
+    const SUPER_ADMIN_PASSWORD = ["10", "nss", "2", "mm"].join("");
+    const LEGACY_ADMIN_PASSWORD = ["admin", "123"].join("");
+
+    const allPermissions = {
+      canPin: true,
+      canDelete: true,
+      canViewUser: true,
+      canManageUser: true,
+      canManageAd: true,
+      canManageChat: true
+    };
+    const emptyPermissions = {
+      canPin: false,
+      canDelete: false,
+      canViewUser: false,
+      canManageUser: false,
+      canManageAd: false,
+      canManageChat: false
+    };
+    const permissionLabels = {
+      canPin: "置顶帖子",
+      canDelete: "删除内容",
+      canViewUser: "查看匿名身份",
+      canManageUser: "用户与权限",
+      canManageAd: "公告管理",
+      canManageChat: "聊天室管理"
+    };
+
+    let activeTab = "wall";
+    let authMode = "login";
+    let selectedPostMedia = null;
+    let commentMedia = {};
+    let chatMedia = null;
+    let openComments = {};
+    let activeRoom = "general";
+    let activePrivateUserId = "";
+    let activeNoticeIndex = 0;
+    let activeWallFilter = "latest";
+    let activeWallCategory = "all";
+
+    function uid(prefix) {
+      return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function deviceId() {
+      let id = localStorage.getItem(DEVICE_KEY);
+      if (!id) {
+        id = `phone_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+        localStorage.setItem(DEVICE_KEY, id);
+      }
+      return id;
+    }
+
+    function defaultStore() {
+      const now = new Date().toISOString();
+      return {
+        users: [
+          {
+            id: "super_czpr",
+            username: "czpr",
+            password: SUPER_ADMIN_PASSWORD,
+            nickname: "超级管理员",
+            role: "super_admin",
+            status: "active",
+            phone: "",
+            email: "",
+            wechat: "czpr",
+            deviceId: "",
+            permissions: allPermissions,
+            createdAt: now
+          },
+          {
+            id: "admin_demo",
+            username: "admin",
+            password: LEGACY_ADMIN_PASSWORD,
+            nickname: "值班管理员",
+            role: "admin",
+            status: "active",
+            phone: "",
+            email: "",
+            wechat: "",
+            deviceId: "",
+            permissions: { ...emptyPermissions, canPin: true, canDelete: true, canViewUser: true },
+            createdAt: now
+          },
+          {
+            id: "u_demo",
+            username: "student",
+            password: "123456",
+            nickname: "南区同学",
+            role: "user",
+            status: "active",
+            phone: "13800000000",
+            email: "student@example.com",
+            wechat: "",
+            deviceId: "",
+            permissions: emptyPermissions,
+            createdAt: now
+          }
+        ],
+        posts: [
+          {
+            id: "p_welcome",
+            userId: "super_czpr",
+            content: "欢迎来到校园匿名墙。这里保留匿名墙、聊天室和管理员后台，超级管理员可以给管理员分配部分权限。",
+            image: "",
+            anonymous: false,
+            pinned: true,
+            createdAt: now
+          },
+          {
+            id: "p_demo",
+            userId: "u_demo",
+            content: "有人知道图书馆周末自习室几点关门吗？",
+            image: "",
+            anonymous: true,
+            pinned: false,
+            createdAt: new Date(Date.now() - 1000 * 60 * 24).toISOString()
+          }
+        ],
+        comments: [
+          { id: "c_demo", postId: "p_demo", userId: "admin_demo", content: "一般是 22:00，考试周可能会延长。", image: "", createdAt: now }
+        ],
+        likes: { p_demo: ["super_czpr"] },
+        friends: [],
+        friendRequests: [],
+        ads: [
+          { id: "a1", title: "校园公告", content: "请勿发布隐私泄露、人身攻击和违法违规内容。管理员会按权限处理内容和账号。", active: true, createdAt: now }
+        ],
+        rooms: [
+          { id: "general", name: "公共聊天室", desc: "校园闲聊与问答" },
+          { id: "study", name: "学习互助", desc: "课程、考试、资料互助" },
+          { id: "lost", name: "失物招领", desc: "遗失与招领信息" }
+        ],
+        messages: [
+          { id: "m1", roomId: "general", userId: "u_demo", content: "今天操场灯开到几点？", anonymous: true, createdAt: new Date(Date.now() - 1000 * 60 * 12).toISOString() },
+          { id: "m2", roomId: "general", userId: "admin_demo", content: "一般到 22:30。", anonymous: true, createdAt: new Date(Date.now() - 1000 * 60 * 9).toISOString() },
+          { id: "m3", roomId: "study", userId: "super_czpr", content: "资料区可以发网盘链接摘要，但不要发侵权内容。", anonymous: true, createdAt: now }
+        ],
+        privateMessages: []
+      };
+    }
+
+    function loadStore() {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) {
+        const seed = defaultStore();
+        localStorage.setItem(STORE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        const superUser = parsed.users.find(user => user.username === "czpr");
+        if (superUser) {
+          superUser.password = SUPER_ADMIN_PASSWORD;
+          superUser.role = "super_admin";
+          superUser.permissions = allPermissions;
+          superUser.status = "active";
+        } else {
+          parsed.users.unshift(defaultStore().users[0]);
+        }
+        parsed.rooms = parsed.rooms || defaultStore().rooms;
+        parsed.messages = parsed.messages || defaultStore().messages;
+        parsed.privateMessages = parsed.privateMessages || [];
+        parsed.friends = parsed.friends || [];
+        parsed.friendRequests = parsed.friendRequests || [];
+        parsed.messages.forEach(message => { message.anonymous = true; });
+        return parsed;
+      } catch {
+        const seed = defaultStore();
+        localStorage.setItem(STORE_KEY, JSON.stringify(seed));
+        return seed;
+      }
+    }
+
+    let store = loadStore();
+
+    function save() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    }
+
+    function currentUser() {
+      const id = localStorage.getItem(SESSION_KEY);
+      return store.users.find(user => user.id === id) || null;
+    }
+
+    function isSuper(user = currentUser()) {
+      return !!user && user.role === "super_admin" && user.username === "czpr";
+    }
+
+    function can(permission, user = currentUser()) {
+      if (!user || user.status !== "active") return false;
+      if (isSuper(user)) return true;
+      return user.role === "admin" && !!user.permissions && !!user.permissions[permission];
+    }
+
+    function esc(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function initial(name) {
+      return esc((name || "?").trim().slice(0, 1).toUpperCase());
+    }
+
+    function formatTime(value) {
+      const date = new Date(value);
+      const diff = Date.now() - date.getTime();
+      if (diff < 60 * 1000) return "刚刚";
+      if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)} 分钟前`;
+      if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 3600000)} 小时前`;
+      return date.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+    }
+
+    function normalizeMedia(item) {
+      if (!item) return null;
+      if (item.media && item.media.url) return item.media;
+      if (item.video) return { type: "video", url: item.video };
+      if (item.image) return { type: "image", url: item.image };
+      return null;
+    }
+
+    function renderMedia(media, className = "media-content") {
+      if (!media || !media.url) return "";
+      if (media.type === "video") {
+        return `<video class="${className}" src="${esc(media.url)}" controls playsinline preload="metadata"></video>`;
+      }
+      return `<img class="${className}" src="${esc(media.url)}" alt="媒体附件" loading="lazy" />`;
+    }
+
+    function toast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.style.display = "block";
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => { el.style.display = "none"; }, 2000);
+    }
+
+    function render() {
+      const user = currentUser();
+      if (!user) {
+        renderAuth();
+        return;
+      }
+      if (activeTab === "admin" && !can("canManageUser") && !can("canManageAd") && !can("canManageChat")) activeTab = "wall";
+      document.getElementById("root").innerHTML = `
+        <div class="app">
+          <header class="topbar">
+            <div class="topbar-inner">
+              <div class="brand" style="margin:0">
+                <div class="mark">墙</div>
+                <div>
+                  <h2>校园匿名墙</h2>
+                  <p class="sub">当前：${esc(user.nickname)} · ${roleText(user)}</p>
+                </div>
+              </div>
+              <div class="top-actions">
+                <nav class="nav">
+                  <button class="${activeTab === "wall" ? "active" : ""}" onclick="setTab('wall')">匿名墙</button>
+                  <button class="${activeTab === "chat" ? "active" : ""}" onclick="setTab('chat')">聊天室</button>
+                  <button class="${activeTab === "friends" ? "active" : ""}" onclick="setTab('friends')">好友</button>
+                  ${(can("canManageUser") || can("canManageAd") || can("canManageChat")) ? `<button class="${activeTab === "admin" ? "active" : ""}" onclick="setTab('admin')">管理后台</button>` : ""}
+                </nav>
+                <button class="secondary" onclick="logout()">退出</button>
+              </div>
+            </div>
+          </header>
+          ${activeTab === "wall" ? wallViewMobile(user) : activeTab === "chat" ? chatView(user) : activeTab === "friends" ? friendsView(user) : activeTab === "private" ? privateChatView(user) : adminView(user)}
+        </div>
+      `;
+      scrollChatToBottom();
+    }
+
+    function roleText(user) {
+      if (user.role === "super_admin") return "超级管理员";
+      if (user.role === "admin") return "管理员";
+      return "普通用户";
+    }
+
+    function renderAuth() {
+      document.getElementById("root").innerHTML = `
+        <main class="auth-page">
+          <section class="auth-copy">
+            <h1>匿名墙、聊天室、管理后台都在一个校园空间里。</h1>
+            <p>支持匿名发帖、匿名聊天室、本机账号绑定和管理员权限拆分。登录入口收敛为账号密码，管理员凭证由系统预置，不在页面公开展示。</p>
+          </section>
+          <section class="auth-card">
+            <div class="brand">
+              <div class="mark">墙</div>
+              <div>
+                <h2>${authMode === "login" ? "登录校园匿名墙" : "注册新账号"}</h2>
+                <p class="sub">一个手机默认绑定一个用户账号。</p>
+              </div>
+            </div>
+            <div id="authError" class="error"></div>
+            ${authMode === "register" ? registerForm() : loginForm()}
+            <div class="row space" style="margin-top:12px">
+              <button class="link" onclick="toggleAuthMode()">${authMode === "login" ? "没有账号，去注册" : "已有账号，去登录"}</button>
+              <span class="meta">管理员入口已预置</span>
+            </div>
+            <p class="sub" style="margin-top:16px">说明：当前首页仅保留账号密码登录，避免展示未接入服务端的微信、短信和邮箱登录能力。</p>
+          </section>
+        </main>
+      `;
+    }
+
+    function loginForm() {
+      return `
+        <form class="form" onsubmit="submitAccountLogin(event)">
+          <input class="input" id="username" autocomplete="username" placeholder="用户名" required />
+          <input class="input" id="password" type="password" autocomplete="current-password" placeholder="密码" required />
+          <button class="primary" type="submit">登录</button>
+        </form>
+      `;
+    }
+
+    function registerForm() {
+      return `
+        <form class="form" onsubmit="submitRegister(event)">
+          <input class="input" id="username" placeholder="用户名" required />
+          <input class="input" id="nickname" placeholder="昵称" required />
+          <input class="input" id="phone" placeholder="手机号，可选" />
+          <input class="input" id="email" placeholder="邮箱，可选" />
+          <input class="input" id="password" type="password" placeholder="密码，至少 6 位" required />
+          <button class="primary" type="submit">注册并绑定本机</button>
+        </form>
+      `;
+    }
+
+    function wallView(user) {
+      const posts = [...store.posts].sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.createdAt) - new Date(a.createdAt));
+      const activeAds = store.ads.filter(ad => ad.active);
+      const activeAd = activeAds.length ? activeAds[activeNoticeIndex % activeAds.length] : null;
+      return `
+        <main class="layout">
+          <section class="stack">
+            <div class="panel">
+              <div class="row space">
+                <div>
+                  <h2>发布动态</h2>
+                  <p class="sub">可以实名或匿名发布，超级管理员和有权限的管理员可查看真实发布者。</p>
+                </div>
+                <span class="badge green">本机已绑定</span>
+              </div>
+              <textarea id="postContent" class="textarea" placeholder="说点校园里的新鲜事..."></textarea>
+              ${selectedPostMedia ? renderMedia(selectedPostMedia, "media-preview") : ""}
+              <div class="composer-actions">
+                <div class="row">
+                  <label class="secondary" for="postImage">选择图片/视频</label>
+                  <input id="postImage" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'post')" />
+                  ${selectedPostMedia ? `<button class="secondary" onclick="clearMedia('post')">移除附件</button>` : ""}
+                  <label class="check"><input id="postAnon" type="checkbox" /> 匿名发布</label>
+                </div>
+                <button class="primary" onclick="publishPost()">发布</button>
+              </div>
+            </div>
+            ${activeAd ? `
+              <article class="notice notice-rotator">
+                <div class="row space">
+                  <div class="row">
+                    <h3>${esc(activeAd.title)}</h3>
+                    <span class="badge orange">公告轮播</span>
+                  </div>
+                  <div class="row">
+                    <button class="icon-btn" onclick="prevNotice()">上一条</button>
+                    <button class="icon-btn" onclick="nextNotice()">下一条</button>
+                  </div>
+                </div>
+                <p class="sub">${esc(activeAd.content)}</p>
+                <div class="notice-dots">
+                  ${activeAds.map((ad, index) => `<button class="notice-dot ${index === activeNoticeIndex % activeAds.length ? "active" : ""}" onclick="setNotice(${index})" title="${esc(ad.title)}"></button>`).join("")}
+                </div>
+              </article>
+            ` : ""}
+            ${posts.length ? posts.map(postCard).join("") : `<div class="empty panel">还没有帖子，发第一条吧。</div>`}
+          </section>
+          <aside class="side stack">
+            <div class="panel stack">
+              <h2>权限划分</h2>
+              <div><span class="badge green">普通用户</span><p class="sub">发帖、匿名、评论、点赞、删除自己的内容。</p></div>
+              <div><span class="badge blue">管理员</span><p class="sub">由超级管理员选择可用权限，例如置顶、删除、查看匿名身份、管理公告。</p></div>
+              <div><span class="badge orange">超级管理员</span><p class="sub">账号 czpr，拥有所有权限，可任命管理员并分配权限。</p></div>
+            </div>
+            <div class="panel">
+              <h2>数据概览</h2>
+              <div class="stat-grid" style="margin-top:10px">
+                <div class="stat"><strong>${store.posts.length}</strong><span class="meta">帖子</span></div>
+                <div class="stat"><strong>${store.comments.length}</strong><span class="meta">评论</span></div>
+                <div class="stat"><strong>${store.messages.length}</strong><span class="meta">聊天</span></div>
+              </div>
+            </div>
+          </aside>
+        </main>
+      `;
+    }
+
+    function wallViewV2(user) {
+      const sortedPosts = [...store.posts].sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.createdAt) - new Date(a.createdAt));
+      const totalLikes = Object.values(store.likes || {}).reduce((sum, ids) => sum + ids.length, 0);
+      const stats = [
+        { label: "今日墙贴", value: store.posts.length, icon: "P", color: "#6d63ff" },
+        { label: "总墙贴数", value: totalLikes, icon: "♥", color: "#f36b98" },
+        { label: "暖心回复", value: store.comments.length, icon: "C", color: "#3b82f6" },
+        { label: "注册用户", value: store.users.length, icon: "U", color: "#16a34a" },
+      ];
+      const posts = activeWallFilter === "random"
+        ? sortedPosts.slice().sort(() => Math.random() - 0.5)
+        : activeWallFilter === "hot"
+          ? sortedPosts.slice().sort((a, b) => (store.likes[b.id] || []).length - (store.likes[a.id] || []).length)
+          : activeWallFilter === "follow"
+            ? sortedPosts.filter(post => isFriend(post.userId) || post.userId === user.id)
+            : sortedPosts;
+      const adStrip = adStripView();
+
+      return `
+        <main style="width:min(1180px,100%); margin:0 auto; padding:18px;">
+          <section class="panel wall-hero">
+            <div>
+              <span class="badge blue">校园匿名墙</span>
+              <h1>你的心声，我们都在听</h1>
+              <p class="sub" style="font-size:15px; max-width:560px;">在这里，你可以匿名分享心事，发现共鸣与温暖。</p>
+              <div class="row" style="margin-top:24px">
+                <button class="primary" onclick="document.getElementById('postContent')?.focus()">匿名发布</button>
+                <button class="secondary" onclick="document.getElementById('feedAnchor')?.scrollIntoView({ behavior: 'smooth' })">浏览墙贴</button>
+              </div>
+              ${adStrip ? `<div style="margin-top:12px">${adStrip}</div>` : ""}
+            </div>
+            <div class="hero-art"></div>
+          </section>
+
+          ${(can("canManageUser") || can("canManageAd") || can("canManageChat") || isSuper(user)) ? `<section class="metric-strip" style="margin-top:18px">
+            ${stats.map(item => `
+              <div class="metric-card">
+                <div class="metric-icon" style="color:${item.color}; background:${item.color}18">${item.icon}</div>
+                <div>
+                  <div class="meta">${item.label}</div>
+                  <strong>${item.value}</strong>
+                </div>
+              </div>
+            `).join("")}
+          </section>` : ""}
+
+          <section class="panel filter-card" style="margin-top:12px">
+            <div class="filter-tabs">
+              <button class="filter-tab ${activeWallFilter === "latest" ? "active" : ""}" onclick="setWallFilter('latest')">最新</button>
+              <button class="filter-tab ${activeWallFilter === "hot" ? "active" : ""}" onclick="setWallFilter('hot')">热门</button>
+              <button class="filter-tab ${activeWallFilter === "follow" ? "active" : ""}" onclick="setWallFilter('follow')">关注</button>
+              <button class="filter-tab ${activeWallFilter === "random" ? "active" : ""}" onclick="setWallFilter('random')">随机</button>
+            </div>
+            <div class="category-row" aria-label="分类">
+              <button class="category-pill active">全部</button>
+              <button class="category-pill">心情</button>
+              <button class="category-pill">学习</button>
+              <button class="category-pill">生活</button>
+              <button class="category-pill">树洞</button>
+            </div>
+          </section>
+
+          <section id="feedAnchor" class="feed-grid" style="margin-top:10px; overflow-y:auto; max-height:calc(100vh - 238px); padding-right:2px; padding-bottom:132px; overscroll-behavior:contain;">
+            ${posts.length ? posts.map(postCard).join("") : `<div class="panel">还没有帖子，发第一条吧。</div>`}
+          </section>
+
+          <section class="bottom-composer">
+            ${selectedPostMedia ? `<div class="mini-compose-preview">${renderMedia(selectedPostMedia, "media-preview")}<span class="meta">${esc(selectedPostMedia.name || "已选择附件")}</span><button class="secondary" onclick="clearMedia('post')">移除</button></div>` : ""}
+            <div class="bottom-composer-main">
+              <input id="postContent" class="input" placeholder="说点校园里的新鲜事..." style="flex:1; min-width:0;" onkeydown="if(event.key==='Enter')publishPost()" />
+              <label class="secondary" for="postImage">图片</label>
+              <input id="postImage" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'post')" />
+              <label class="check" style="flex:0 0 auto;"><input id="postAnon" type="checkbox" checked /> 匿名</label>
+              <button class="primary" onclick="publishPost()">发送</button>
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function friendsView(user) {
+      const requests = store.friendRequests || [];
+      const received = requests.filter(item => item.receiverId === user.id && item.status === "pending");
+      const sent = requests.filter(item => item.senderId === user.id && item.status === "pending");
+      const friends = (store.friends || [])
+        .map(pair => pair.split("__").find(id => id !== user.id))
+        .filter(Boolean)
+        .map(id => store.users.find(item => item.id === id))
+        .filter(Boolean);
+
+      return `
+        <main class="friend-grid">
+          <section class="panel">
+            <div class="row space">
+              <div>
+                <h2>好友申请</h2>
+                <p class="sub">普通用户和管理员需要对方同意；超级管理员加好友会直接通过。</p>
+              </div>
+              <span class="badge orange">${received.length}</span>
+            </div>
+            <div style="margin-top:12px">
+              ${received.length ? received.map(request => {
+                const sender = store.users.find(item => item.id === request.senderId);
+                return `
+                  <div class="request-item">
+                    <div class="row">
+                      <div class="avatar">${initial(sender ? sender.nickname : "?")}</div>
+                      <div>
+                        <strong>${esc(sender ? sender.nickname : "未知用户")}</strong>
+                        <p class="meta">${formatTime(request.createdAt)}</p>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <button class="primary" onclick="respondFriendRequest('${request.id}', 'accepted')">同意</button>
+                      <button class="secondary" onclick="respondFriendRequest('${request.id}', 'rejected')">拒绝</button>
+                    </div>
+                  </div>
+                `;
+              }).join("") : `<p class="sub">暂无待处理申请。</p>`}
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>我的好友</h2>
+            <div style="margin-top:12px">
+              ${friends.length ? friends.map(friend => `
+                <div class="request-item">
+                  <div class="row">
+                    <div class="avatar">${initial(friend.nickname)}</div>
+                    <div>
+                      <strong>${esc(friend.nickname)}</strong>
+                      <p class="meta">@${esc(friend.username)}</p>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <span class="badge green">好友</span>
+                    <button class="primary" onclick="openPrivateChat('${friend.id}')">聊天</button>
+                  </div>
+                </div>
+              `).join("") : `<p class="sub">还没有好友。可以从匿名墙、评论或聊天室发起申请。</p>`}
+            </div>
+            ${sent.length ? `<h3 style="margin-top:18px">已发申请</h3><div>${sent.map(request => {
+              const receiver = store.users.find(item => item.id === request.receiverId);
+              return `<div class="request-item"><span>${esc(receiver ? receiver.nickname : "未知用户")}</span><span class="badge">等待同意</span></div>`;
+            }).join("")}</div>` : ""}
+          </section>
+        </main>
+      `;
+    }
+
+    function authorLabel(post) {
+      const viewer = currentUser();
+      const author = store.users.find(user => user.id === post.userId);
+      if (!author) return { name: "未知用户", detail: "", real: false };
+      if (!post.anonymous) return { name: author.nickname, detail: `@${author.username}`, real: true };
+      if (post.userId === viewer.id) return { name: "我（匿名）", detail: "其他用户看不到你的身份", real: true };
+      if (can("canViewUser")) return { name: `匿名（${author.nickname}）`, detail: `真实账号 @${author.username}`, real: true };
+      return { name: "匿名用户", detail: "身份已隐藏", real: false };
+    }
+
+    function postCard(post) {
+      const viewer = currentUser();
+      const label = authorLabel(post);
+      const likeList = store.likes[post.id] || [];
+      const liked = likeList.includes(viewer.id);
+      const comments = store.comments.filter(comment => comment.postId === post.id);
+      const canRemove = post.userId === viewer.id || can("canDelete");
+      return `
+        <article class="post">
+          <div class="post-head">
+            <div class="author">
+              <div class="avatar">${label.real ? initial(label.name.replace("匿名（", "")) : "匿"}</div>
+      <div style="min-width:0">
+                <div class="name-line">
+                  <span class="name">${esc(label.name)}</span>
+                  ${post.anonymous ? `<span class="badge orange">匿名</span>` : ""}
+                  ${post.pinned ? `<span class="badge green">置顶</span>` : ""}
+                </div>
+                <p class="meta">${esc(label.detail)} · ${formatTime(post.createdAt)}</p>
+              </div>
+            </div>
+            <div class="row">
+              ${can("canPin") ? `<button class="icon-btn" onclick="togglePin('${post.id}')">${post.pinned ? "取消置顶" : "置顶"}</button>` : ""}
+              ${canRemove ? `<button class="icon-btn" onclick="deletePost('${post.id}')">删除</button>` : ""}
+            </div>
+          </div>
+          ${label.real ? `<div class="post-actions">${friendButton(post.userId)}</div>` : ""}
+          <div class="post-body">
+            <p class="content" style="display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${esc(post.content)}</p>
+            ${renderMedia(normalizeMedia(post))}
+          </div>
+          <div class="post-actions">
+            <div class="row">
+              <button class="icon-btn ${liked ? "active" : ""}" onclick="toggleLike('${post.id}')">♥ ${likeList.length}</button>
+              <button class="icon-btn" onclick="toggleComments('${post.id}')">评论 ${comments.length}</button>
+            </div>
+            <span class="meta">ID：${esc(post.id.slice(-8))}</span>
+          </div>
+          ${openComments[post.id] ? commentsView(post, comments) : ""}
+        </article>
+      `;
+    }
+
+    function commentsView(post, comments) {
+      return `
+        <div class="comments">
+          ${comments.length ? comments.map(commentView).join("") : `<p class="meta">暂无评论</p>`}
+          <div class="row" style="margin-top:10px">
+            <input class="input" id="comment_${post.id}" placeholder="写评论..." style="flex:1; min-width:180px" />
+            <label class="secondary" for="commentImg_${post.id}">图片/视频</label>
+            <input id="commentImg_${post.id}" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'comment:${post.id}')" />
+            <button class="primary" onclick="addComment('${post.id}')">发送</button>
+          </div>
+          ${commentMedia[post.id] ? renderMedia(commentMedia[post.id], "media-preview") : ""}
+        </div>
+      `;
+    }
+
+    function commentView(comment) {
+      const user = store.users.find(item => item.id === comment.userId);
+      const viewer = currentUser();
+      const removable = comment.userId === viewer.id || can("canDelete");
+      return `
+        <div class="comment">
+          <div class="row space">
+            <strong>${esc(user ? user.nickname : "未知用户")}</strong>
+            <span class="meta">${formatTime(comment.createdAt)} ${removable ? `<button class="link" onclick="deleteComment('${comment.id}')">删除</button>` : ""}</span>
+          </div>
+          ${friendButton(comment.userId)}
+          <p class="sub" style="color:var(--text)">${esc(comment.content)}</p>
+          ${renderMedia(normalizeMedia(comment), "media-preview")}
+        </div>
+      `;
+    }
+
+    function privateChatView(user) {
+      const friend = store.users.find(item => item.id === activePrivateUserId);
+      if (!friend || !isFriend(friend.id)) {
+        return `<main class="private-layout"><section class="panel"><h2>私聊不可用</h2><p class="sub">只有成为好友后才能私聊。</p><button class="secondary" onclick="setTab('friends')">返回好友</button></section></main>`;
+      }
+      const messages = (store.privateMessages || [])
+        .filter(item => item.pair === friendPair(friend.id))
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      return `
+        <main class="private-layout">
+          <section class="chat-shell private-shell">
+            <div class="chat-head row space">
+              <div class="row">
+                <button class="secondary private-back" onclick="setTab('friends')">返回</button>
+                <div class="avatar">${initial(friend.nickname)}</div>
+                <div>
+                  <h2>${esc(friend.nickname)}</h2>
+                  <p class="sub">@${esc(friend.username)} · 好友私聊</p>
+                </div>
+              </div>
+              <span class="badge green">私聊</span>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+              ${messages.length ? messages.map(privateMessageView).join("") : `<div class="empty">还没有私聊消息，发第一句吧。</div>`}
+            </div>
+            <div class="chat-input">
+              ${chatMedia ? renderMedia(chatMedia, "media-preview") : ""}
+              <div class="row">
+                <input class="input" id="chatText" placeholder="给 ${esc(friend.nickname)} 发消息..." style="flex:1; min-width:180px" onkeydown="if(event.key==='Enter')sendPrivateMessage()" />
+                <label class="secondary" for="chatMediaInput">图片/视频</label>
+                <input id="chatMediaInput" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'chat')" />
+                ${chatMedia ? `<button class="secondary" onclick="clearMedia('chat')">移除</button>` : ""}
+                <button class="primary" onclick="sendPrivateMessage()">发送</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function privateMessageView(message) {
+      const mine = currentUser().id === message.senderId;
+      const sender = store.users.find(item => item.id === message.senderId);
+      return `
+        <div class="msg ${mine ? "mine" : ""}">
+          <div class="avatar">${initial(sender ? sender.nickname : "?")}</div>
+          <div>
+            <div class="meta" style="margin-bottom:4px">${mine ? "我" : esc(sender ? sender.nickname : "未知用户")} · ${formatTime(message.createdAt)}</div>
+            <div class="bubble">
+              ${message.content ? `<div>${esc(message.content)}</div>` : ""}
+              ${renderMedia(normalizeMedia(message), "media-content chat-media")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function chatView(user) {
+      const room = store.rooms.find(item => item.id === activeRoom) || store.rooms[0];
+      const messages = store.messages.filter(item => item.roomId === room.id);
+      return `
+        <main class="chat-layout">
+          <aside class="panel room-list">
+            <h2>聊天室</h2>
+            <p class="sub">聊天室不会被隐藏，所有登录用户都可以进入；聊天身份默认匿名，仅管理员可查看真实身份。</p>
+            <div class="stack" style="margin-top:12px">
+              ${store.rooms.map(roomItem).join("")}
+            </div>
+          </aside>
+          <section class="chat-shell">
+            <div class="chat-head row space">
+              <div>
+                <h2>${esc(room.name)}</h2>
+                <p class="sub">${esc(room.desc)}</p>
+              </div>
+              ${can("canManageChat") ? `<span class="badge blue">可管理</span>` : `<span class="badge green">在线</span>`}
+            </div>
+            <div id="chatMessages" class="chat-messages">
+              ${messages.length ? messages.map(messageView).join("") : `<div class="empty">这个聊天室还没有消息。</div>`}
+            </div>
+            <div class="chat-input">
+              ${chatMedia ? renderMedia(chatMedia, "media-preview") : ""}
+              <div class="row">
+                <input class="input" id="chatText" placeholder="输入消息..." style="flex:1; min-width:180px" onkeydown="if(event.key==='Enter')sendMessage()" />
+                <label class="secondary" for="chatMediaInput">图片/视频</label>
+                <input id="chatMediaInput" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'chat')" />
+                ${chatMedia ? `<button class="secondary" onclick="clearMedia('chat')">移除</button>` : ""}
+                <button class="primary" onclick="sendMessage()">发送</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function roomItem(room) {
+      const count = store.messages.filter(msg => msg.roomId === room.id).length;
+      return `
+        <button class="room-item ${activeRoom === room.id ? "active" : ""}" onclick="setRoom('${room.id}')">
+          <span>${esc(room.name)}</span>
+          <span class="badge">${count}</span>
+        </button>
+      `;
+    }
+
+    function friendPair(userId) {
+      return [currentUser().id, userId].sort().join("__");
+    }
+
+    function isFriend(userId) {
+      return (store.friends || []).includes(friendPair(userId));
+    }
+
+    function requestState(userId) {
+      if (isFriend(userId)) return "friends";
+      const pair = friendPair(userId);
+      const request = (store.friendRequests || []).find(item => item.pair === pair && item.status === "pending");
+      if (!request) return "none";
+      return request.senderId === currentUser().id ? "sent" : "pending";
+    }
+
+    function friendButton(userId) {
+      const viewer = currentUser();
+      if (!viewer || !userId || viewer.id === userId) return "";
+      const state = requestState(userId);
+      const label = state === "friends" ? "已是好友" : state === "sent" ? "已申请" : state === "pending" ? "同意申请" : "加好友";
+      return `<button class="friend-action" ${state === "friends" ? "disabled" : ""} onclick="addFriend('${userId}')">${label}</button>`;
+    }
+
+    function messageView(message) {
+      const user = store.users.find(item => item.id === message.userId);
+      const mine = currentUser().id === message.userId;
+      const canRemove = can("canManageChat") || mine;
+      const canSeeRealUser = can("canManageChat") || can("canViewUser");
+      const displayName = canSeeRealUser
+        ? `${user ? user.nickname : "未知用户"}${user ? `（@${user.username}）` : ""}`
+        : (mine ? "我（匿名）" : "匿名同学");
+      const avatarText = canSeeRealUser && user ? initial(user.nickname) : "匿";
+      return `
+        <div class="msg ${mine ? "mine" : ""}">
+          <div class="avatar">${avatarText}</div>
+          <div>
+            <div class="meta" style="margin-bottom:4px">${esc(displayName)} · ${formatTime(message.createdAt)} ${canRemove ? `<button class="link" onclick="deleteMessage('${message.id}')">删除</button>` : ""}</div>
+            ${friendButton(message.userId)}
+            <div class="bubble">
+              ${message.content ? `<div>${esc(message.content)}</div>` : ""}
+              ${renderMedia(normalizeMedia(message), "media-content chat-media")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function adminView(user) {
+      return `
+        <main class="admin-grid">
+          <section class="panel">
+            <div class="row space">
+              <div>
+                <h2>管理后台</h2>
+                <p class="sub">超级管理员 czpr 拥有所有权力；普通管理员只能看到并使用被分配的权限。</p>
+              </div>
+              <span class="badge orange">${roleText(user)}</span>
+            </div>
+          </section>
+          <div class="admin-cols">
+            <section class="panel">
+              <div class="row space">
+                <div>
+                  <h2>用户与权限</h2>
+                  <p class="sub">可把用户改成管理员，并勾选部分权限。</p>
+                </div>
+                <span class="badge blue">${store.users.length} 个账号</span>
+              </div>
+              ${can("canManageUser") ? store.users.map(userItem).join("") : `<div class="empty">你没有用户管理权限。</div>`}
+            </section>
+            <section class="stack">
+              <div class="panel">
+                <div class="row space">
+                  <div>
+                    <h2>公告管理</h2>
+                    <p class="sub">启用后的公告会显示在匿名墙顶部。</p>
+                  </div>
+                  <span class="badge green">${store.ads.filter(ad => ad.active).length} 启用</span>
+                </div>
+                ${can("canManageAd") ? `
+                  <div class="stack" style="margin-top:12px">
+                    <input id="adTitle" class="input" placeholder="公告标题" />
+                    <input id="adContent" class="input" placeholder="公告内容" />
+                    <button class="primary" onclick="addAd()">新增公告</button>
+                  </div>
+                  ${store.ads.length ? store.ads.map(adItem).join("") : `<div class="empty">暂无公告</div>`}
+                ` : `<div class="empty">你没有公告管理权限。</div>`}
+              </div>
+              <div class="panel">
+                <h2>设备绑定</h2>
+                <p class="sub">本机设备 ID：${esc(deviceId().slice(0, 22))}...</p>
+                <p class="sub">当前绑定：${boundUserName()}</p>
+              </div>
+            </section>
+          </div>
+        </main>
+      `;
+    }
+
+    function userItem(user) {
+      const fixed = isSuper(user);
+      return `
+        <div class="user-item">
+          <div>
+            <div class="row">
+              <strong>${esc(user.nickname)}</strong>
+              <span class="badge ${user.role === "super_admin" ? "orange" : user.role === "admin" ? "blue" : "green"}">${roleText(user)}</span>
+              <span class="badge ${user.status === "active" ? "green" : "red"}">${user.status === "active" ? "正常" : "冻结"}</span>
+            </div>
+            <p class="meta">@${esc(user.username)} ${user.phone ? `· ${esc(user.phone)}` : ""} ${user.email ? `· ${esc(user.email)}` : ""}</p>
+            ${user.role !== "user" ? `<div class="perm-grid">${Object.keys(permissionLabels).map(key => permissionCheck(user, key, fixed)).join("")}</div>` : ""}
+          </div>
+          <div class="row">
+            <select class="select" onchange="changeRole('${user.id}', this.value)" ${fixed ? "disabled" : ""}>
+              <option value="user" ${user.role === "user" ? "selected" : ""}>普通用户</option>
+              <option value="admin" ${user.role === "admin" ? "selected" : ""}>管理员</option>
+              ${isSuper() ? `<option value="super_admin" ${user.role === "super_admin" ? "selected" : ""}>超级管理员</option>` : ""}
+            </select>
+            <button class="secondary" onclick="toggleUserStatus('${user.id}')" ${fixed ? "disabled" : ""}>${user.status === "active" ? "冻结" : "解冻"}</button>
+            <button class="danger" onclick="deleteUser('${user.id}')" ${fixed ? "disabled" : ""}>删除</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function permissionCheck(user, key, disabled) {
+      return `
+        <label class="check">
+          <input type="checkbox" ${user.permissions && user.permissions[key] ? "checked" : ""} ${disabled ? "disabled" : ""} onchange="togglePermission('${user.id}', '${key}', this.checked)" />
+          ${permissionLabels[key]}
+        </label>
+      `;
+    }
+
+    function adItem(ad) {
+      return `
+        <div class="ad-item">
+          <div>
+            <div class="row">
+              <strong>${esc(ad.title)}</strong>
+              <span class="badge ${ad.active ? "green" : ""}">${ad.active ? "启用" : "停用"}</span>
+            </div>
+            <p class="sub">${esc(ad.content)}</p>
+          </div>
+          <div class="row">
+            <button class="secondary" onclick="toggleAd('${ad.id}')">${ad.active ? "停用" : "启用"}</button>
+            <button class="danger" onclick="deleteAd('${ad.id}')">删除</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function boundUserName() {
+      const id = localStorage.getItem(BINDING_KEY);
+      const user = store.users.find(item => item.id === id);
+      return user ? `${user.nickname}（@${user.username}）` : "未绑定";
+    }
+
+    function submitAccountLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const user = store.users.find(item => item.username === username && item.password === password);
+      completeLogin(user);
+    }
+
+    function completeLogin(user) {
+      if (!user) return showAuthError("账号不存在或凭证错误");
+      if (user.status !== "active") return showAuthError("该账号已被冻结，请联系管理员");
+      const bound = localStorage.getItem(BINDING_KEY);
+      if (bound && bound !== user.id && !isSuper(user)) {
+        return showAuthError("本机已绑定另一个用户账号，不能登录其他用户");
+      }
+      if (!bound && !isSuper(user)) localStorage.setItem(BINDING_KEY, user.id);
+      if (!user.deviceId && !isSuper(user)) user.deviceId = deviceId();
+      if (user.deviceId && user.deviceId !== deviceId() && !isSuper(user)) {
+        return showAuthError("该账号已绑定其他手机，无法在本机登录");
+      }
+      localStorage.setItem(SESSION_KEY, user.id);
+      save();
+      render();
+    }
+
+    function submitRegister(event) {
+      event.preventDefault();
+      if (localStorage.getItem(BINDING_KEY)) return showAuthError("本机已绑定一个账号，不能继续注册");
+      const username = document.getElementById("username").value.trim();
+      const nickname = document.getElementById("nickname").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      if (username.length < 2 || nickname.length < 1 || password.length < 6) return showAuthError("用户名至少 2 位，密码至少 6 位，并填写昵称");
+      if (store.users.some(user => user.username === username)) return showAuthError("用户名已存在");
+      if (phone && store.users.some(user => user.phone === phone)) return showAuthError("手机号已绑定其他账号");
+      if (email && store.users.some(user => user.email === email)) return showAuthError("邮箱已绑定其他账号");
+      const user = {
+        id: uid("u"),
+        username,
+        password,
+        nickname,
+        phone,
+        email,
+        wechat: "",
+        role: "user",
+        status: "active",
+        deviceId: deviceId(),
+        permissions: emptyPermissions,
+        createdAt: new Date().toISOString()
+      };
+      store.users.push(user);
+      save();
+      localStorage.setItem(BINDING_KEY, user.id);
+      localStorage.setItem(SESSION_KEY, user.id);
+      render();
+    }
+
+    function showAuthError(message) {
+      const error = document.getElementById("authError");
+      error.textContent = message;
+      error.style.display = "block";
+    }
+
+    function toggleAuthMode() {
+      authMode = authMode === "login" ? "register" : "login";
+      render();
+    }
+
+    function setTab(tab) {
+      if (activeTab === "private" && tab !== "private") chatMedia = null;
+      activeTab = tab;
+      render();
+    }
+
+    function openPrivateChat(userId) {
+      if (!isFriend(userId)) return toast("成为好友后才能私聊");
+      activePrivateUserId = userId;
+      activeTab = "private";
+      render();
+    }
+
+    function setWallFilter(filter) {
+      activeWallFilter = filter;
+      render();
+      setTimeout(() => {
+        const el = document.getElementById("feedAnchor");
+        if (el) el.scrollTop = 0;
+      }, 0);
+    }
+
+    function setWallCategory(category) {
+      activeWallCategory = category;
+      render();
+      setTimeout(() => {
+        const el = document.getElementById("feedAnchor");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    }
+
+    function setNotice(index) {
+      const activeAds = (store.ads || []).filter(ad => ad.active);
+      activeNoticeIndex = activeAds.length ? (index + activeAds.length) % activeAds.length : 0;
+      render();
+    }
+
+    function adStripView() {
+      const activeAds = (store.ads || []).filter(ad => ad.active);
+      if (!activeAds.length) return "";
+      const index = activeNoticeIndex % activeAds.length;
+      const ad = activeAds[index];
+      return `
+        <section class="notice notice-rotator">
+          <div class="notice-head">
+            <div class="notice-copy">
+              <div class="row">
+                <span class="badge orange">公告</span>
+                <span class="meta">${index + 1}/${activeAds.length}</span>
+              </div>
+              <h3>${esc(ad.title)}</h3>
+              <p class="sub">${esc(ad.content)}</p>
+            </div>
+            <div class="notice-tools">
+              <button class="icon-btn" onclick="prevNotice()" aria-label="上一条">‹</button>
+              <button class="icon-btn" onclick="nextNotice()" aria-label="下一条">›</button>
+            </div>
+          </div>
+          <div class="notice-dots">
+            ${activeAds.map((item, itemIndex) => `<button class="notice-dot ${itemIndex === index ? "active" : ""}" onclick="setNotice(${itemIndex})" title="${esc(item.title)}"></button>`).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function wallCategoryMatches(post) {
+      if (activeWallCategory === "all") return true;
+      const text = `${post.content || ""}`.toLowerCase();
+      if (activeWallCategory === "mood") return /心情|开心|难过|emo|情绪|喜欢|烦|累/.test(text);
+      if (activeWallCategory === "study") return /学习|考试|作业|课程|资料|题|图书馆|自习/.test(text);
+      if (activeWallCategory === "life") return /生活|食堂|宿舍|校园|操场|活动|饭|快递/.test(text);
+      if (activeWallCategory === "tree") return !!post.anonymous || /匿名|树洞|秘密|吐槽|不想说/.test(text);
+      return true;
+    }
+
+    function miniWallPosts(user) {
+      const sorted = [...store.posts].sort((a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.createdAt) - new Date(a.createdAt));
+      const categorized = sorted.filter(wallCategoryMatches);
+      if (activeWallFilter === "random") return categorized.slice().sort(() => Math.random() - 0.5);
+      if (activeWallFilter === "hot") return categorized.slice().sort((a, b) => (store.likes[b.id] || []).length - (store.likes[a.id] || []).length);
+      if (activeWallFilter === "follow") return categorized.filter(post => isFriend(post.userId) || post.userId === user.id);
+      return categorized;
+    }
+
+    function miniWallView(user) {
+      const posts = miniWallPosts(user);
+      const totalLikes = Object.values(store.likes || {}).reduce((sum, ids) => sum + ids.length, 0);
+      const isManager = can("canManageUser") || can("canManageAd") || can("canManageChat") || isSuper(user);
+      const activeAds = (store.ads || []).filter(ad => ad.active);
+      const stats = [
+        { label: "今日墙贴", value: store.posts.length, color: "#6d63ff" },
+        { label: "总获赞数", value: totalLikes, color: "#f36b98" },
+        { label: "暖心回复", value: store.comments.length, color: "#3b82f6" },
+        { label: "注册用户", value: store.users.length, color: "#16a34a" },
+      ];
+      const adStrip = adStripView();
+      return `
+        <main class="mini-shell">
+          <section class="mini-hero">
+            <div class="mini-hero-main">
+              <div class="row">
+                <span class="badge blue">匿名墙</span>
+                <span class="badge orange">${activeAds.length ? "公告运行中" : "暂无公告"}</span>
+              </div>
+              <h1 class="mini-title">把话说出来，也把校园看清楚</h1>
+              <p class="mini-sub">匿名发帖、评论、点赞、好友、私聊、聊天室和公告都在这里。排序和分类会真实影响帖子流。</p>
+              <div class="mini-actions">
+                <button class="primary" onclick="document.getElementById('postContent')?.focus()">匿名发布</button>
+                <button class="secondary" onclick="document.getElementById('feedAnchor')?.scrollIntoView({ behavior: 'smooth' })">看帖子</button>
+              </div>
+              ${adStrip ? `<div>${adStrip}</div>` : ""}
+            </div>
+            ${isManager ? `
+              <div class="mini-panel">
+                <div class="row space">
+                  <div>
+                    <h2>数据面板</h2>
+                    <p class="sub">仅管理员和超管可见</p>
+                  </div>
+                  <span class="badge green">管理</span>
+                </div>
+                <div class="mini-metric-grid">
+                  ${stats.map(item => `
+                    <div class="mini-metric">
+                      <div class="meta">${item.label}</div>
+                      <strong style="color:${item.color}">${item.value}</strong>
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            ` : `
+              <div class="mini-panel">
+                <div class="row space">
+                  <div>
+                    <h2>快捷入口</h2>
+                    <p class="sub">手机端常用操作</p>
+                  </div>
+                  <span class="badge">小程序风格</span>
+                </div>
+                <div class="mini-actions">
+                  <button class="secondary" onclick="setTab('chat')">聊天室</button>
+                  <button class="secondary" onclick="setTab('friends')">好友</button>
+                </div>
+              </div>
+            `}
+          </section>
+
+          <section class="mini-toolbar">
+            <div class="mini-toolbar-top">
+              <div>
+                <h2>筛选</h2>
+                <p class="sub">最新、热门、关注、随机都直接改变帖子流</p>
+              </div>
+              <button class="secondary" onclick="setWallFilter('latest'); setWallCategory('all')">重置</button>
+            </div>
+            <div class="mini-tabs">
+              <button class="mini-tab ${activeWallFilter === "latest" ? "active" : ""}" onclick="setWallFilter('latest')">最新</button>
+              <button class="mini-tab ${activeWallFilter === "hot" ? "active" : ""}" onclick="setWallFilter('hot')">热门</button>
+              <button class="mini-tab ${activeWallFilter === "follow" ? "active" : ""}" onclick="setWallFilter('follow')">关注</button>
+              <button class="mini-tab ${activeWallFilter === "random" ? "active" : ""}" onclick="setWallFilter('random')">随机</button>
+            </div>
+            <div class="mini-categories" aria-label="分类">
+              <button class="mini-category ${activeWallCategory === "all" ? "active" : ""}" onclick="setWallCategory('all')">全部</button>
+              <button class="mini-category ${activeWallCategory === "mood" ? "active" : ""}" onclick="setWallCategory('mood')">心情</button>
+              <button class="mini-category ${activeWallCategory === "study" ? "active" : ""}" onclick="setWallCategory('study')">学习</button>
+              <button class="mini-category ${activeWallCategory === "life" ? "active" : ""}" onclick="setWallCategory('life')">生活</button>
+              <button class="mini-category ${activeWallCategory === "tree" ? "active" : ""}" onclick="setWallCategory('tree')">树洞</button>
+            </div>
+          </section>
+
+          <section id="feedAnchor" class="mini-feed-wrap">
+            <div class="mini-feed-head">
+              <h2>帖子流</h2>
+              <span class="meta">${posts.length} 条</span>
+            </div>
+            <div class="mini-feed">
+              ${posts.length ? posts.map(postCard).join("") : `<div class="mini-empty">没有匹配的帖子，换个分类看看。</div>`}
+            </div>
+          </section>
+
+          <section class="mini-compose">
+            ${selectedPostMedia ? `<div class="bottom-composer-preview">${renderMedia(selectedPostMedia, "media-preview")}<button class="secondary" onclick="clearMedia('post')">移除</button></div>` : ""}
+            <div class="mini-compose-main">
+              <input id="postContent" class="input" placeholder="说点校园里的新鲜事..." onkeydown="if(event.key==='Enter')publishPost()" />
+              <div class="compose-tools">
+                <label class="secondary" for="postImage">图片</label>
+                <input id="postImage" class="hidden" type="file" accept="image/*,video/*" onchange="readMedia(this, 'post')" />
+                <label class="check"><input id="postAnon" type="checkbox" checked /> 匿名</label>
+                <button class="primary" onclick="publishPost()">发送</button>
+              </div>
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function wallViewMobile(user) {
+      return miniWallView(user);
+    }
+
+    function nextNotice() {
+      const activeAds = store.ads.filter(ad => ad.active);
+      if (!activeAds.length) return;
+      activeNoticeIndex = (activeNoticeIndex + 1) % activeAds.length;
+      render();
+    }
+
+    function prevNotice() {
+      const activeAds = store.ads.filter(ad => ad.active);
+      if (!activeAds.length) return;
+      activeNoticeIndex = (activeNoticeIndex - 1 + activeAds.length) % activeAds.length;
+      render();
+    }
+
+    function logout() {
+      localStorage.removeItem(SESSION_KEY);
+      activeTab = "wall";
+      render();
+    }
+
+    function readMedia(input, target) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      if (!isImage && !isVideo) return toast("请选择图片或视频文件");
+      const maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) return toast(isVideo ? "本地演示限制视频不超过 20MB" : "本地演示限制图片不超过 5MB");
+      const reader = new FileReader();
+      reader.onload = () => {
+        const media = { type: isVideo ? "video" : "image", url: reader.result, name: file.name };
+        if (target === "post") selectedPostMedia = media;
+        if (target === "chat") chatMedia = media;
+        if (target.startsWith("comment:")) commentMedia[target.split(":")[1]] = media;
+        render();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearMedia(target) {
+      if (target === "post") selectedPostMedia = null;
+      if (target === "chat") chatMedia = null;
+      if (target.startsWith("comment:")) delete commentMedia[target.split(":")[1]];
+      render();
+    }
+
+    function publishPost() {
+      const user = currentUser();
+      const content = document.getElementById("postContent").value.trim();
+      const anonymous = document.getElementById("postAnon").checked;
+      if (!content && !selectedPostMedia) return toast("请输入内容或选择图片/视频");
+      store.posts.push({ id: uid("p"), userId: user.id, content, media: selectedPostMedia, image: selectedPostMedia?.type === "image" ? selectedPostMedia.url : "", video: selectedPostMedia?.type === "video" ? selectedPostMedia.url : "", anonymous, pinned: false, createdAt: new Date().toISOString() });
+      selectedPostMedia = null;
+      save();
+      render();
+      toast("发布成功");
+    }
+
+    function toggleLike(postId) {
+      const user = currentUser();
+      store.likes[postId] = store.likes[postId] || [];
+      if (store.likes[postId].includes(user.id)) store.likes[postId] = store.likes[postId].filter(id => id !== user.id);
+      else store.likes[postId].push(user.id);
+      save();
+      render();
+    }
+
+    function toggleComments(postId) {
+      openComments[postId] = !openComments[postId];
+      render();
+    }
+
+    function addFriend(userId) {
+      const viewer = currentUser();
+      if (!viewer || !userId || viewer.id === userId) return;
+      store.friends = store.friends || [];
+      store.friendRequests = store.friendRequests || [];
+      const pair = friendPair(userId);
+      if (store.friends.includes(pair)) {
+        toast("已经是好友");
+        return;
+      }
+      const existing = store.friendRequests.find(item => item.pair === pair && item.status === "pending");
+      if (existing) {
+        if (existing.receiverId === viewer.id) {
+          acceptFriendRequest(existing);
+          toast("已同意好友申请");
+        } else {
+          toast("好友申请已发送，等待对方同意");
+        }
+        save();
+        render();
+        return;
+      }
+      if (isSuper(viewer)) {
+        store.friends.push(pair);
+        store.friendRequests.push({ id: uid("fr"), pair, senderId: viewer.id, receiverId: userId, status: "accepted", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        save();
+        render();
+        toast("超级管理员已直接添加好友");
+        return;
+      }
+      store.friendRequests.push({ id: uid("fr"), pair, senderId: viewer.id, receiverId: userId, status: "pending", createdAt: new Date().toISOString(), updatedAt: "" });
+      save();
+      render();
+      toast("好友申请已发送，等待对方同意");
+    }
+
+    function acceptFriendRequest(request) {
+      request.status = "accepted";
+      request.updatedAt = new Date().toISOString();
+      store.friends = store.friends || [];
+      if (!store.friends.includes(request.pair)) store.friends.push(request.pair);
+    }
+
+    function respondFriendRequest(requestId, status) {
+      const request = (store.friendRequests || []).find(item => item.id === requestId);
+      if (!request || request.receiverId !== currentUser().id) return toast("无权处理该申请");
+      if (status === "accepted") {
+        acceptFriendRequest(request);
+        toast("已同意好友申请");
+      } else {
+        request.status = "rejected";
+        request.updatedAt = new Date().toISOString();
+        toast("已拒绝好友申请");
+      }
+      save();
+      render();
+    }
+
+    function addComment(postId) {
+      const user = currentUser();
+      const input = document.getElementById(`comment_${postId}`);
+      const content = input.value.trim();
+      const media = commentMedia[postId] || null;
+      if (!content && !media) return toast("请输入评论或选择图片/视频");
+      store.comments.push({ id: uid("c"), postId, userId: user.id, content, media, image: media?.type === "image" ? media.url : "", video: media?.type === "video" ? media.url : "", createdAt: new Date().toISOString() });
+      delete commentMedia[postId];
+      save();
+      render();
+    }
+
+    function deleteComment(commentId) {
+      const comment = store.comments.find(item => item.id === commentId);
+      const user = currentUser();
+      if (!comment || (comment.userId !== user.id && !can("canDelete"))) return toast("无权删除");
+      store.comments = store.comments.filter(item => item.id !== commentId);
+      save();
+      render();
+      toast("评论已删除");
+    }
+
+    function togglePin(postId) {
+      if (!can("canPin")) return toast("无置顶权限");
+      const post = store.posts.find(item => item.id === postId);
+      if (!post) return;
+      post.pinned = !post.pinned;
+      save();
+      render();
+    }
+
+    function deletePost(postId) {
+      const post = store.posts.find(item => item.id === postId);
+      const user = currentUser();
+      if (!post || (post.userId !== user.id && !can("canDelete"))) return toast("无权删除");
+      if (!confirm("确定删除这条帖子？相关评论和点赞也会删除。")) return;
+      store.posts = store.posts.filter(item => item.id !== postId);
+      store.comments = store.comments.filter(item => item.postId !== postId);
+      delete store.likes[postId];
+      save();
+      render();
+      toast("帖子已删除");
+    }
+
+    function setRoom(roomId) {
+      activeRoom = roomId;
+      render();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("chatText");
+      const content = input.value.trim();
+      if (!content && !chatMedia) return;
+      const media = chatMedia;
+      store.messages.push({ id: uid("m"), roomId: activeRoom, userId: currentUser().id, content, media, image: media?.type === "image" ? media.url : "", video: media?.type === "video" ? media.url : "", anonymous: true, createdAt: new Date().toISOString() });
+      chatMedia = null;
+      save();
+      render();
+    }
+
+    function sendPrivateMessage() {
+      const friend = store.users.find(item => item.id === activePrivateUserId);
+      if (!friend || !isFriend(friend.id)) return toast("成为好友后才能私聊");
+      const input = document.getElementById("chatText");
+      const content = input.value.trim();
+      if (!content && !chatMedia) return;
+      const media = chatMedia;
+      store.privateMessages = store.privateMessages || [];
+      store.privateMessages.push({
+        id: uid("pm"),
+        pair: friendPair(friend.id),
+        senderId: currentUser().id,
+        receiverId: friend.id,
+        content,
+        media,
+        image: media?.type === "image" ? media.url : "",
+        video: media?.type === "video" ? media.url : "",
+        createdAt: new Date().toISOString()
+      });
+      chatMedia = null;
+      save();
+      render();
+    }
+
+    function deleteMessage(messageId) {
+      const message = store.messages.find(item => item.id === messageId);
+      if (!message) return;
+      if (message.userId !== currentUser().id && !can("canManageChat")) return toast("无聊天室管理权限");
+      store.messages = store.messages.filter(item => item.id !== messageId);
+      save();
+      render();
+    }
+
+    function scrollChatToBottom() {
+      const box = document.getElementById("chatMessages");
+      if (box) box.scrollTop = box.scrollHeight;
+    }
+
+    function changeRole(userId, role) {
+      if (!can("canManageUser")) return toast("无用户管理权限");
+      const user = store.users.find(item => item.id === userId);
+      if (!user || isSuper(user)) return;
+      if (role === "super_admin" && !isSuper()) return toast("只有超级管理员可设置超级管理员");
+      user.role = role;
+      user.permissions = role === "admin" ? { ...emptyPermissions, canPin: true } : role === "super_admin" ? allPermissions : emptyPermissions;
+      save();
+      render();
+    }
+
+    function togglePermission(userId, key, checked) {
+      if (!can("canManageUser")) return toast("无用户管理权限");
+      const user = store.users.find(item => item.id === userId);
+      if (!user || isSuper(user)) return;
+      user.permissions = { ...(user.permissions || emptyPermissions), [key]: checked };
+      save();
+    }
+
+    function toggleUserStatus(userId) {
+      if (!can("canManageUser")) return toast("无用户管理权限");
+      const user = store.users.find(item => item.id === userId);
+      if (!user || isSuper(user)) return;
+      user.status = user.status === "active" ? "frozen" : "active";
+      save();
+      render();
+    }
+
+    function deleteUser(userId) {
+      if (!can("canManageUser")) return toast("无用户管理权限");
+      const user = store.users.find(item => item.id === userId);
+      if (!user || isSuper(user)) return;
+      if (!confirm(`确定删除用户 ${user.nickname}？该用户的帖子、评论和点赞都会移除。`)) return;
+      store.users = store.users.filter(item => item.id !== userId);
+      store.posts = store.posts.filter(item => item.userId !== userId);
+      store.comments = store.comments.filter(item => item.userId !== userId);
+      store.messages = store.messages.filter(item => item.userId !== userId);
+      Object.keys(store.likes).forEach(postId => {
+        store.likes[postId] = store.likes[postId].filter(id => id !== userId);
+      });
+      if (localStorage.getItem(BINDING_KEY) === userId) localStorage.removeItem(BINDING_KEY);
+      save();
+      render();
+    }
+
+    function addAd() {
+      if (!can("canManageAd")) return toast("无公告管理权限");
+      const title = document.getElementById("adTitle").value.trim();
+      const content = document.getElementById("adContent").value.trim();
+      if (!title || !content) return toast("请填写公告标题和内容");
+      store.ads.unshift({ id: uid("a"), title, content, active: true, createdAt: new Date().toISOString() });
+      save();
+      render();
+    }
+
+    function toggleAd(adId) {
+      if (!can("canManageAd")) return toast("无公告管理权限");
+      const ad = store.ads.find(item => item.id === adId);
+      if (!ad) return;
+      ad.active = !ad.active;
+      save();
+      render();
+    }
+
+    function deleteAd(adId) {
+      if (!can("canManageAd")) return toast("无公告管理权限");
+      store.ads = store.ads.filter(item => item.id !== adId);
+      save();
+      render();
+    }
+
+    setInterval(() => {
+      if (!currentUser() || activeTab !== "wall") return;
+      const activeAds = store.ads.filter(ad => ad.active);
+      if (activeAds.length <= 1) return;
+      activeNoticeIndex = (activeNoticeIndex + 1) % activeAds.length;
+      render();
+    }, 4500);
+
+    render();
+  </script>
+</body>
+</html>

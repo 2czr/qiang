@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: campus-wall
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile || pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.1
+      - key: HOST
+        value: 0.0.0.0
